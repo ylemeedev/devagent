@@ -62,3 +62,20 @@ class LengthTool:
     def execute(self, input: str) -> ToolResult:
         return ToolResult.ok(str(len(input)))
 
+class DivideTool:
+
+    name = "divide"
+
+    def execute(self, input: str) -> ToolResult:
+        try:
+            ports = input.split(":")
+
+            a = int(ports[0])
+            b = int(ports[1])
+
+            result = a / b
+
+            return ToolResult.ok(str(result))
+        except (ValueError, ZeroDivisionError, IndexError):
+            return ToolResult.error("Division impossible")
+

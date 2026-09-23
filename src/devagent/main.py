@@ -1,5 +1,5 @@
 from devagent.agent import Agent
-from devagent.tool import HelloTool, GoodbyeTool, UpperTool, ReverseTool, LengthTool, ToolResult
+from devagent.tool import HelloTool, GoodbyeTool, UpperTool, ReverseTool, LengthTool, DivideTool
 
 def run() -> None:
 
@@ -8,7 +8,8 @@ def run() -> None:
         GoodbyeTool(),
         UpperTool(),
         ReverseTool(),
-        LengthTool()
+        LengthTool(),
+        DivideTool(),
     ]
 
     agent = Agent(tools)
@@ -18,6 +19,7 @@ def run() -> None:
     print(agent.run_tool("upper", "bob"))
     print(agent.run_tool("reverse", "bonjour"))
     print(agent.run_tool("length", "ceci est un test"))
+    print(agent.run_tool("divide", "9"))
 
     
 if __name__ == "__main__":

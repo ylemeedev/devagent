@@ -2,6 +2,7 @@ pyproject.toml
 src/devagent/__init__.py
 src/devagent/agent.py
 src/devagent/main.py
+src/devagent/tool.py
 src/devagent.egg-info/PKG-INFO
 src/devagent.egg-info/SOURCES.txt
 src/devagent.egg-info/dependency_links.txt
