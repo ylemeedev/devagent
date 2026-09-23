@@ -1,5 +1,8 @@
-from typing import Protocol
+from typing import Protocol, TypeVar
 from dataclasses import dataclass
+from pydantic import BaseModel
+
+T = TypeVar("T")
 
 @dataclass
 class ToolResult:
@@ -20,62 +23,82 @@ class ToolResult:
             content=content
         )
 
-class Tool(Protocol):
+class Tool(Protocol[T]):
 
     name: str
+    input_model: type[T]
 
-    def execute(self, input: str) -> ToolResult:
+    def execute(self, input: T) -> ToolResult:
         ...
+
+class HelloInput(BaseModel):
+    name: str
+
+class GoodbyeInput(BaseModel):
+    name: str
+
+class UpperInput(BaseModel):
+    text: str
+
+class ReverseInput(BaseModel):
+    text: str
+
+class LengthInput(BaseModel):
+    text: str
+
+class DivideInput(BaseModel):
+    a: int
+    b: int
 
 class HelloTool:
 
     name = "hello"
+    input_model  = HelloInput
 
-    def execute(self, input: str) -> ToolResult:
-        return ToolResult.ok(f"Bonjour {input}")
+    def execute(self, input: HelloInput) -> ToolResult:
+        return ToolResult.ok(f"Bonjour {input.name}")
 
 class GoodbyeTool:
 
     name = "goodbye"
+    input_model  = GoodbyeInput
 
-    def execute(self, input: str) -> ToolResult:
-        return ToolResult.ok(f"Au revoir {input}")
+    def execute(self, input: GoodbyeInput) -> ToolResult:
+        return ToolResult.ok(f"Au revoir {input.name}")
 
 class UpperTool:
 
     name = "upper"
+    input_model  = UpperInput
 
-    def execute(self, input: str) -> ToolResult:
-        return ToolResult.ok(content=input.upper())
+    def execute(self, input: UpperInput) -> ToolResult:
+        return ToolResult.ok(content=input.text.upper())
 
 class ReverseTool:
 
     name = "reverse"
+    input_model  = ReverseInput
 
-    def execute(self, input: str) -> ToolResult:
-        return ToolResult.ok(input[::-1])
+    def execute(self, input: ReverseInput) -> ToolResult:
+        return ToolResult.ok(input.text[::-1])
 
 class LengthTool:
 
     name = "length"
+    input_model  = LengthInput
 
-    def execute(self, input: str) -> ToolResult:
-        return ToolResult.ok(str(len(input)))
+    def execute(self, input: LengthInput) -> ToolResult:
+        return ToolResult.ok(str(len(input.text)))
 
 class DivideTool:
 
     name = "divide"
+    input_model  = DivideInput
 
-    def execute(self, input: str) -> ToolResult:
+    def execute(self, input: DivideInput) -> ToolResult:
         try:
-            ports = input.split(":")
-
-            a = int(ports[0])
-            b = int(ports[1])
-
-            result = a / b
-
+            result = input.a / input.b
             return ToolResult.ok(str(result))
-        except (ValueError, ZeroDivisionError, IndexError):
+        except ZeroDivisionError:
             return ToolResult.error("Division impossible")
 
