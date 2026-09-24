@@ -1,6 +1,6 @@
 from typing import Protocol, TypeVar
 from dataclasses import dataclass
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 T = TypeVar("T")
 
@@ -32,23 +32,25 @@ class Tool(Protocol[T]):
         ...
 
 class HelloInput(BaseModel):
-    name: str
+    name: str = Field(min_length=2)
+    active: bool = True
+    description: str | None = None
 
 class GoodbyeInput(BaseModel):
-    name: str
+    name: str = Field(min_length=2)
 
 class UpperInput(BaseModel):
-    text: str
+    text: str = Field(min_length=2)
 
 class ReverseInput(BaseModel):
-    text: str
+    text: str = Field(min_length=2)
 
 class LengthInput(BaseModel):
-    text: str
+    text: str = Field(min_length=2)
 
 class DivideInput(BaseModel):
     a: int
-    b: int
+    b: int = Field(ne=0)
 
 class HelloTool:
 
@@ -56,7 +58,7 @@ class HelloTool:
     input_model  = HelloInput
 
     def execute(self, input: HelloInput) -> ToolResult:
-        return ToolResult.ok(f"Bonjour {input.name}")
+        return ToolResult.ok(f"Bonjour {input.name} - Status : {input.active} - Description : {input.description}")
 
 class GoodbyeTool:
 
@@ -96,6 +98,9 @@ class DivideTool:
     input_model  = DivideInput
 
     def execute(self, input: DivideInput) -> ToolResult:
+
+        print(input.model_json_schema())
+
         try:
             result = input.a / input.b
             return ToolResult.ok(str(result))
