@@ -1,6 +1,8 @@
 from typing import Protocol, TypeVar
 from dataclasses import dataclass
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
+import requests
+import httpx
 
 T = TypeVar("T")
 
@@ -31,6 +33,10 @@ class Tool(Protocol[T]):
     def execute(self, input: T) -> ToolResult:
         ...
 
+class CreateUserInput(BaseModel):
+    name: str = Field(min_length=2)
+    age: int = Field(gt=0)
+
 class HelloInput(BaseModel):
     name: str = Field(min_length=2)
     active: bool = True
@@ -51,6 +57,41 @@ class LengthInput(BaseModel):
 class DivideInput(BaseModel):
     a: int
     b: int = Field(ne=0)
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    age: int
+    test: int
+
+class CreateUserTool:
+    name = "create_user"
+    input_model = CreateUserInput
+
+    def execute(self, input: CreateUserInput) -> ToolResult:
+
+        json = {
+            "name": input.name,
+            "age": input.age
+        }
+
+        try:
+            response = requests.post(
+                "https://jsonplaceholder.typicode.com/users",
+                json = json
+            )
+            
+            if (response.status_code == 201):
+                user = UserResponse.model_validate(response.json())
+                return ToolResult.ok(f"{user.name} est ajouté - Age: {user.age} - Id: {user.id}")
+
+            return ToolResult.error(
+                f"Erreur HTTP : {response.status_code}"
+            )
+        except ValidationError:
+            return ToolResult.error("Données reçues non valide")
+        except requests.RequestException:
+            return ToolResult.error("Une erreur s'est produite lors de l'ajout de l'utilisateur")
 
 class HelloTool:
 
