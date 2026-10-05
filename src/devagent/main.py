@@ -1,49 +1,54 @@
 from devagent.agent import Agent
-from devagent.tool import HelloTool, GoodbyeTool, UpperTool, ReverseTool, LengthTool, DivideTool, CreateUserTool
-import httpx
+from devagent.tool import UpperTool, GetUserTool, CreateUserTool
 import asyncio
-
-async def getUser(id: int):
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"https://jsonplaceholder.typicode.com/users/{id}")
-        return response.json()
-
+import httpx
+import time
 
 async def main():
     users_id = [1, 4, 9]
-    tasks = [
-        getUser(user_id)
-        for user_id in users_id
-    ]
-    user = await asyncio.gather(*tasks)
-    print(user)
+
+    async with httpx.AsyncClient() as client:
+
+        users = []
+
+        tasks = [
+            getUser(client, user_id)
+            for user_id in users_id
+        ]
+
+        users = await asyncio.gather(*tasks)
+
+        for user in users:
+            print(user)
+
+async def getUser(client: httpx.AsyncClient, id: int):
+    response = await client.get(
+        f"https://jsonplaceholder.typicode.com/users/{id}"
+    )
+
+    return response.json()
 
 
-def run() -> None:
-
+async def main_test():
     tools = [
-        HelloTool(),
-        GoodbyeTool(),
         UpperTool(),
-        ReverseTool(),
-        LengthTool(),
-        DivideTool(),
+        GetUserTool(),
         CreateUserTool()
     ]
 
     agent = Agent(tools)
-    
-    """ print(agent.run_tool("hello", {"name": "Yves"}))
-    print(agent.run_tool("goodbye", {"name": "Rémi"}))
-    print(agent.run_tool("upper", {"text": "bob"}))
-    print(agent.run_tool("reverse", {"text": "bonjour"}))
-    print(agent.run_tool("length", {"text": "ceci est un test"}))
-    print(agent.run_tool("divide", {"a": 9, "b": 4})) """
 
-    """print(agent.run_tool("create_user", {"name": "Rémi", "age": 25}))"""
+    results = await asyncio.gather(
+        agent.run_tool("get_user", {"id": 1}),
+        agent.run_tool("create_user", {
+            "name": "Yves",
+            "age": 25,
+        }),
+        agent.run_tool("upper", {"text": "ceci est un test"})
+    )
 
-    print("TEST")
-    
+    print(results)
+
 if __name__ == "__main__":
-    asyncio.run(main())
-    run()
+    asyncio.run(main_test())
+    """ asyncio.run(main()) """

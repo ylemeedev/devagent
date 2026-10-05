@@ -30,7 +30,7 @@ class Tool(Protocol[T]):
     name: str
     input_model: type[T]
 
-    def execute(self, input: T) -> ToolResult:
+    async def execute(self, input: T) -> ToolResult:
         ...
 
 class CreateUserInput(BaseModel):
@@ -62,13 +62,32 @@ class UserResponse(BaseModel):
     id: int
     name: str
     age: int
-    test: int
+
+class GetUserInput(BaseModel):
+    id: int = Field(gt=0)
+
+class GetUserTool:
+    name = "get_user"
+    input_model = GetUserInput
+
+    async def execute(self, input: GetUserInput) -> ToolResult:
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(f"https://jsonplaceholder.typicode.com/users/{input.id}")
+
+            if (response.status_code == 200):
+                return ToolResult.ok(response.json())
+
+            return ToolResult.error("User introuvable")
+        except httpx.requestError:
+            return ToolResult.error("Une erreur s'est produite")
+
 
 class CreateUserTool:
     name = "create_user"
     input_model = CreateUserInput
 
-    def execute(self, input: CreateUserInput) -> ToolResult:
+    async def execute(self, input: CreateUserInput) -> ToolResult:
 
         json = {
             "name": input.name,
@@ -76,10 +95,11 @@ class CreateUserTool:
         }
 
         try:
-            response = requests.post(
-                "https://jsonplaceholder.typicode.com/users",
-                json = json
-            )
+            async with httpx.AsyncClient(timeout=10) as client:
+                response = await client.post(
+                    "https://jsonplaceholder.typicode.com/users",
+                    json = json
+                )
             
             if (response.status_code == 201):
                 user = UserResponse.model_validate(response.json())
@@ -90,15 +110,17 @@ class CreateUserTool:
             )
         except ValidationError:
             return ToolResult.error("Données reçues non valide")
-        except requests.RequestException:
+        except httpx.RequestError:
             return ToolResult.error("Une erreur s'est produite lors de l'ajout de l'utilisateur")
+        except httpx.TimeoutException:
+            return ToolResult.error("La requête a expiré")
 
 class HelloTool:
 
     name = "hello"
     input_model  = HelloInput
 
-    def execute(self, input: HelloInput) -> ToolResult:
+    async def execute(self, input: HelloInput) -> ToolResult:
         return ToolResult.ok(f"Bonjour {input.name} - Status : {input.active} - Description : {input.description}")
 
 class GoodbyeTool:
@@ -106,7 +128,7 @@ class GoodbyeTool:
     name = "goodbye"
     input_model  = GoodbyeInput
 
-    def execute(self, input: GoodbyeInput) -> ToolResult:
+    async def execute(self, input: GoodbyeInput) -> ToolResult:
         return ToolResult.ok(f"Au revoir {input.name}")
 
 class UpperTool:
@@ -114,7 +136,7 @@ class UpperTool:
     name = "upper"
     input_model  = UpperInput
 
-    def execute(self, input: UpperInput) -> ToolResult:
+    async def execute(self, input: UpperInput) -> ToolResult:
         return ToolResult.ok(content=input.text.upper())
 
 class ReverseTool:
@@ -122,7 +144,7 @@ class ReverseTool:
     name = "reverse"
     input_model  = ReverseInput
 
-    def execute(self, input: ReverseInput) -> ToolResult:
+    async def execute(self, input: ReverseInput) -> ToolResult:
         return ToolResult.ok(input.text[::-1])
 
 class LengthTool:
@@ -130,7 +152,7 @@ class LengthTool:
     name = "length"
     input_model  = LengthInput
 
-    def execute(self, input: LengthInput) -> ToolResult:
+    async def execute(self, input: LengthInput) -> ToolResult:
         return ToolResult.ok(str(len(input.text)))
 
 class DivideTool:
@@ -138,7 +160,7 @@ class DivideTool:
     name = "divide"
     input_model  = DivideInput
 
-    def execute(self, input: DivideInput) -> ToolResult:
+    async def execute(self, input: DivideInput) -> ToolResult:
 
         print(input.model_json_schema())
 

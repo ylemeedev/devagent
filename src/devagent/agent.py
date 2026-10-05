@@ -6,7 +6,7 @@ class Agent:
     def __init__(self, tools: list[Tool]):
         self.tools = {tool.name: tool for tool in tools}
 
-    def run_tool(self, name: str, data) -> ToolResult:
+    async def run_tool(self, name: str, data) -> ToolResult:
         tool = self.tools.get(name)
 
         if tool is None:
@@ -17,4 +17,4 @@ class Agent:
         else:
             input = tool.input_model(data)
 
-        return tool.execute(input)
+        return await tool.execute(input)
