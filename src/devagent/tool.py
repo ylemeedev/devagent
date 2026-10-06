@@ -1,8 +1,12 @@
 from typing import Protocol, TypeVar
 from dataclasses import dataclass
-from pydantic import BaseModel, Field, ValidationError
-import requests
+from pydantic import BaseModel, Field, ValidationError, field_validator
+from devagent.config import API_URL, HTTP_TIMEOUT
 import httpx
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
@@ -58,6 +62,14 @@ class DivideInput(BaseModel):
     a: int
     b: int = Field(ne=0)
 
+    @field_validator("b")
+    @classmethod
+    def b_must_not_be_zero(cls, value: int) -> int:
+        if value == 0:
+            raise ValueError("b ne doit pas être égal à zéro")
+
+        return value
+
 class UserResponse(BaseModel):
     id: int
     name: str
@@ -72,15 +84,20 @@ class GetUserTool:
 
     async def execute(self, input: GetUserInput) -> ToolResult:
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(f"https://jsonplaceholder.typicode.com/users/{input.id}")
+            async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
+                response = await client.get(f"{API_URL}/users/{input.id}")
 
             if (response.status_code == 200):
+                logger.info("Utilisateur récupéré")
                 return ToolResult.ok(response.json())
 
+            logger.error("User introuvable")
             return ToolResult.error("User introuvable")
-        except httpx.requestError:
+        except httpx.RequestError as error:
+            logger.error(f"Erreur HTTPX : {error}")
             return ToolResult.error("Une erreur s'est produite")
+        except httpx.TimeoutException as error:
+            logger.error(f"Une erreur s'est produite - {error}")
 
 
 class CreateUserTool:
@@ -90,29 +107,34 @@ class CreateUserTool:
     async def execute(self, input: CreateUserInput) -> ToolResult:
 
         json = {
-            "name": input.name,
+            "name": "Rémi",
             "age": input.age
         }
 
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
+            async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
                 response = await client.post(
-                    "https://jsonplaceholder.typicode.com/users",
+                    f"{API_URL}/users",
                     json = json
                 )
             
             if (response.status_code == 201):
                 user = UserResponse.model_validate(response.json())
+                logger.info(f"Utilisateur {user.name} sauvegardé")
                 return ToolResult.ok(f"{user.name} est ajouté - Age: {user.age} - Id: {user.id}")
 
+            logger.error("Une erreur s'est produite lors de la sauvegarde")
             return ToolResult.error(
                 f"Erreur HTTP : {response.status_code}"
             )
-        except ValidationError:
+        except ValidationError as error:
+            logger.error(f"Erreur de données - {error}")
             return ToolResult.error("Données reçues non valide")
-        except httpx.RequestError:
+        except httpx.RequestError as error:
+            logger.error(f"Erreur de requête - {error}")
             return ToolResult.error("Une erreur s'est produite lors de l'ajout de l'utilisateur")
-        except httpx.TimeoutException:
+        except httpx.TimeoutException as error:
+            logger.error(f"Requête expiré - {error}")
             return ToolResult.error("La requête a expiré")
 
 class HelloTool:
@@ -161,9 +183,6 @@ class DivideTool:
     input_model  = DivideInput
 
     async def execute(self, input: DivideInput) -> ToolResult:
-
-        print(input.model_json_schema())
-
         try:
             result = input.a / input.b
             return ToolResult.ok(str(result))

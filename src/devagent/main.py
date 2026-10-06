@@ -2,7 +2,6 @@ from devagent.agent import Agent
 from devagent.tool import UpperTool, GetUserTool, CreateUserTool
 import asyncio
 import httpx
-import time
 
 async def main():
     users_id = [1, 4, 9]
@@ -30,6 +29,7 @@ async def getUser(client: httpx.AsyncClient, id: int):
 
 
 async def main_test():
+
     tools = [
         UpperTool(),
         GetUserTool(),
@@ -47,7 +47,7 @@ async def main_test():
         agent.run_tool("upper", {"text": "ceci est un test"})
     )
 
-    print(results)
+    """ print(results) """
 
 if __name__ == "__main__":
     asyncio.run(main_test())
