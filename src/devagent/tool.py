@@ -4,8 +4,11 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 from devagent.config import API_URL, HTTP_TIMEOUT
 import httpx
 import logging
+from pathlib import Path
 
-logging.basicConfig(level=logging.INFO)
+
+cert_path = Path(__file__).resolve().parents[2] / "certs" / "jsonplaceholder-typicode-com.pem"
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
@@ -60,7 +63,7 @@ class LengthInput(BaseModel):
 
 class DivideInput(BaseModel):
     a: int
-    b: int = Field(ne=0)
+    b: int = Field(json_schema_extra={"ne": 2})
 
     @field_validator("b")
     @classmethod
@@ -84,7 +87,7 @@ class GetUserTool:
 
     async def execute(self, input: GetUserInput) -> ToolResult:
         try:
-            async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
+            async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, verify=str(cert_path)) as client:
                 response = await client.get(f"{API_URL}/users/{input.id}")
 
             if (response.status_code == 200):
@@ -112,7 +115,7 @@ class CreateUserTool:
         }
 
         try:
-            async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
+            async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, verify=str(cert_path)) as client:
                 response = await client.post(
                     f"{API_URL}/users",
                     json = json
@@ -188,4 +191,16 @@ class DivideTool:
             return ToolResult.ok(str(result))
         except ZeroDivisionError:
             return ToolResult.error("Division impossible")
+
+
+class Divide:
+
+    def execute(self):
+        try:
+            return 10 / 0;
+        except ZeroDivisionError:
+            return "Division par zéro impossible"
+
+
+
 

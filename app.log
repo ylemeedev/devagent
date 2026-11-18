@@ -1,0 +1,9 @@
+2026-11-05 07:50:38 | ERROR | __main__ | Le fichier est ouvert
+2026-11-05 07:51:32 | ERROR | __main__ | Le fichier n'existe pas
+2026-11-05 07:51:46 | ERROR | __main__ | Le fichier n'existe pas
+2026-11-12 07:52:58 | INFO | httpx | HTTP Request: GET https://jsonplaceholder.typicode.com/users/2 "HTTP/1.1 200 OK"
+2026-11-12 07:52:58 | INFO | devagent.tool | Utilisateur récupéré
+2026-11-12 07:53:21 | INFO | httpx | HTTP Request: GET https://jsonplaceholder.typicode.com/users/2 "HTTP/1.1 200 OK"
+2026-11-12 07:53:21 | INFO | devagent.tool | Utilisateur récupéré
+2026-11-12 08:11:14 | INFO | httpx | HTTP Request: GET https://jsonplaceholder.typicode.com/users/2 "HTTP/1.1 200 OK"
+2026-11-12 08:11:15 | INFO | devagent.tool | Utilisateur récupéré
